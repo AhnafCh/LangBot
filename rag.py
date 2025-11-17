@@ -52,4 +52,5 @@ async def get_rag_response(query: str):
    # Generate the final response using the language model (LLM)
    generated_response = llm.generate(prompt)
   
-   return generated_response
+   # Extract the text from the response
+   return generated_response.generations[0][0].text
