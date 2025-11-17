@@ -1,33 +1,37 @@
-﻿import sys
-from pathlib import Path
-
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
+"""
+Main FastAPI application with support for both local and cloud backends
+"""
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.endpoints import router
+
+# Import the unified endpoints
+from src.api import router
 
 app = FastAPI(
     title="RAG System API",
-    description="Document-based Q&A system with local and cloud support",
+    description="Document-based Q&A system with local (FAISS) and cloud (Supabase) support",
     version="2.0"
 )
 
+# Enable CORS for the frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # In production, specify your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Include API router
 app.include_router(router)
+
+# Serve static files (HTML client)
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
     import os
+    
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File
-from src.core.rag import get_rag_response
-from src.backends.faiss_manager import vector_store_manager
+from rag import get_rag_response
+from vector_store_manager import vector_store_manager
 import os
 import shutil
 from pathlib import Path

@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import os
 
 from langchain_openai import OpenAI
-from src.backends.faiss_manager import vector_store_manager
+from vector_store_manager import vector_store_manager
 
 # Load environment variables
 load_dotenv()

@@ -1,3 +1,47 @@
+# Environment variables
 .env
-/__pycache__/
-/venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# Vector store data (FAISS indexes and metadata)
+vector_store/
+vector_store_metadata.json
+
+# User uploaded documents (optional - remove if you want to track them)
+# data/*.txt
+# data/*.pdf
+# data/*.docx
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build and distribution
+*.egg-info/
+dist/
+build/

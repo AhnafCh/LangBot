@@ -44,6 +44,155 @@
             font-size: 1.1em;
         }
 
+        .upload-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #667eea;
+        }
+
+        .upload-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .file-name {
+            color: #666;
+            font-style: italic;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        #selectFileBtn, #uploadBtn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        #selectFileBtn {
+            background: #667eea;
+            color: white;
+        }
+
+        #selectFileBtn:hover {
+            background: #5568d3;
+        }
+
+        #uploadBtn {
+            background: #27ae60;
+            color: white;
+        }
+
+        #uploadBtn:hover:not(:disabled) {
+            background: #229954;
+        }
+
+        #uploadBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #uploadStatus {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        #uploadStatus.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        #uploadStatus.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .documents-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-header h3 {
+            margin: 0;
+            color: #667eea;
+        }
+
+        #refreshDocsBtn {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        #refreshDocsBtn:hover {
+            background: #5568d3;
+        }
+
+        #documentsList {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .document-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .document-info {
+            flex: 1;
+        }
+
+        .document-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .document-meta {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .document-id {
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
         .query-section {
             margin-bottom: 30px;
         }
@@ -176,6 +325,39 @@
         <h1>🤖 RAG System</h1>
         <p class="subtitle">Ask questions about your documents</p>
 
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <label for="fileInput">📄 Upload New Document:</label>
+            <div class="upload-container">
+                <input 
+                    type="file" 
+                    id="fileInput" 
+                    accept=".txt,.md,.text"
+                    style="display: none;"
+                    onchange="handleFileSelect()"
+                />
+                <button id="selectFileBtn" onclick="document.getElementById('fileInput').click()">
+                    Choose File
+                </button>
+                <span id="selectedFileName" class="file-name">No file selected</span>
+                <button id="uploadBtn" onclick="uploadDocument()" disabled>
+                    Upload & Vectorize
+                </button>
+            </div>
+            <div id="uploadStatus"></div>
+        </div>
+
+        <!-- Documents List Section -->
+        <div class="documents-section">
+            <div class="section-header">
+                <h3>📚 Uploaded Documents</h3>
+                <button id="refreshDocsBtn" onclick="loadDocuments()">🔄 Refresh</button>
+            </div>
+            <div id="documentsList">
+                <div class="loading">Loading documents...</div>
+            </div>
+        </div>
+
         <div class="query-section">
             <label for="queryInput">Your Question:</label>
             <input 
@@ -200,6 +382,109 @@
 
     <script>
         const API_BASE_URL = 'http://localhost:8000';
+
+        // Load documents on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDocuments();
+        });
+
+        function handleFileSelect() {
+            const fileInput = document.getElementById('fileInput');
+            const selectedFileName = document.getElementById('selectedFileName');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (fileInput.files.length > 0) {
+                selectedFileName.textContent = fileInput.files[0].name;
+                uploadBtn.disabled = false;
+            } else {
+                selectedFileName.textContent = 'No file selected';
+                uploadBtn.disabled = true;
+            }
+        }
+
+        async function uploadDocument() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (fileInput.files.length === 0) {
+                alert('Please select a file first!');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+            uploadStatus.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/upload/`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    uploadStatus.className = 'success';
+                    if (data.status === 'duplicate') {
+                        uploadStatus.textContent = `⚠️ ${data.message}`;
+                    } else {
+                        uploadStatus.textContent = `✓ ${data.message} (Document ID: ${data.document_id})`;
+                    }
+                    
+                    // Reset file input
+                    fileInput.value = '';
+                    document.getElementById('selectedFileName').textContent = 'No file selected';
+                    
+                    // Reload documents list
+                    loadDocuments();
+                } else {
+                    uploadStatus.className = 'error';
+                    uploadStatus.textContent = `✗ Error: ${data.detail}`;
+                }
+                
+                uploadStatus.style.display = 'block';
+            } catch (error) {
+                uploadStatus.className = 'error';
+                uploadStatus.textContent = `✗ Error: ${error.message}`;
+                uploadStatus.style.display = 'block';
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload & Vectorize';
+            }
+        }
+
+        async function loadDocuments() {
+            const documentsList = document.getElementById('documentsList');
+            documentsList.innerHTML = '<div class="loading">Loading documents...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/documents/`);
+                const data = await response.json();
+                
+                if (data.count === 0) {
+                    documentsList.innerHTML = '<div class="empty-state">No documents uploaded yet. Upload a document to get started!</div>';
+                } else {
+                    documentsList.innerHTML = data.documents.map(doc => `
+                        <div class="document-item">
+                            <div class="document-info">
+                                <div class="document-name">📄 ${escapeHtml(doc.original_filename)}</div>
+                                <div class="document-meta">
+                                    <span class="document-id">${doc.document_id}</span> • 
+                                    ${doc.chunk_count} chunks
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                documentsList.innerHTML = `<div class="error">Error loading documents: ${escapeHtml(error.message)}</div>`;
+            }
+        }
 
         async function submitQuery() {
             const queryInput = document.getElementById('queryInput');

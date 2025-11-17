@@ -6,3 +6,9 @@ langchain-text-splitters
 openai 
 langchain-openai 
 faiss-cpu
+python-multipart
+python-dotenv
+supabase
+psycopg2-binary
+pgvector
+gunicorn
